@@ -1,3 +1,6 @@
 __pycache__
 .vscode
 cache/*
+dist
+build
+main.spec

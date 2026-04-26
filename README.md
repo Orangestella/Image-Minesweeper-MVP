@@ -23,3 +23,8 @@ python main.py
 - `Import pack`: extract a previously exported `.tar` into `cache/packs/` and switch the settings to the imported resources
 
 Settings are saved automatically after every change. If an image or audio file is missing later, the game falls back to colored cells or silence.
+
+
+## Acknowledgements
+
+The UI of this project uses the MiSans font. The MiSans font is copyrighted by Xiaomi Inc. and is permitted for free commercial use by the general public under the MiSans Font Intellectual Property License Agreement.

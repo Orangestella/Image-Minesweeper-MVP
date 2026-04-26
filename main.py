@@ -8,6 +8,33 @@ import tempfile
 import uuid
 from collections import deque
 
+def _enable_high_dpi():
+    """声明进程为 DPI 感知，避免 Windows 把 pygame 窗口拉伸导致发糊。
+    必须在 pygame.init() / set_mode() 之前调用。"""
+    if sys.platform != "win32":
+        return
+    import ctypes
+    try:
+        # Windows 8.1+：Per-Monitor V2（最佳效果，每个屏幕独立 DPI）
+        ctypes.windll.shcore.SetProcessDpiAwarenessContext(-4)
+        return
+    except (AttributeError, OSError):
+        pass
+    try:
+        # Windows 8.1+：Per-Monitor DPI Aware
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+        return
+    except (AttributeError, OSError):
+        pass
+    try:
+        # Windows Vista+ 兜底：System DPI Aware
+        ctypes.windll.user32.SetProcessDPIAware()
+    except (AttributeError, OSError):
+        pass
+
+
+_enable_high_dpi()
+
 import pygame
 
 
@@ -17,6 +44,13 @@ try:
 except Exception:
     tk = None
     filedialog = None
+
+if getattr(sys, 'frozen', False):
+    # 如果是被打包成 exe 运行，获取 exe 所在的同级目录
+    APP_DIR = os.path.dirname(sys.executable)
+else:
+    # 如果是 python 源码运行
+    APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 WINDOW_WIDTH = 980
@@ -40,7 +74,7 @@ RESOURCE_FIELDS = [
     ("bgm_audio_path", "BGM audio"),
 ]
 
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
+# APP_DIR = os.path.dirname(os.path.abspath(__file__))
 SETTINGS_DIR = os.path.join(APP_DIR, "config")
 SETTINGS_PATH = os.path.join(SETTINGS_DIR, "settings.json")
 CACHE_DIR = os.path.join(APP_DIR, "cache")
@@ -67,17 +101,23 @@ NUMBER_COLORS = {
 }
 
 
-def load_font(size, bold=False):
-    candidates = [
-        r"C:\Windows\Fonts\msyhbd.ttc" if bold else r"C:\Windows\Fonts\msyh.ttc",
-        r"C:\Windows\Fonts\simhei.ttf",
-        r"C:\Windows\Fonts\arialbd.ttf" if bold else r"C:\Windows\Fonts\arial.ttf",
-    ]
-    for path in candidates:
-        if path and os.path.exists(path):
-            return pygame.font.Font(path, size)
-    return pygame.font.Font(None, size)
+# def load_font(size, bold=False):
+#     candidates = [
+#         r"C:\Windows\Fonts\msyhbd.ttc" if bold else r"C:\Windows\Fonts\msyh.ttc",
+#         r"C:\Windows\Fonts\simhei.ttf",
+#         r"C:\Windows\Fonts\arialbd.ttf" if bold else r"C:\Windows\Fonts\arial.ttf",
+#     ]
+#     for path in candidates:
+#         if path and os.path.exists(path):
+#             return pygame.font.Font(path, size)
+#     return pygame.font.Font(None, size)
 
+def load_font(size, bold=False):
+    # 将字体文件放在根目录的 assets 文件夹下
+    font_path = os.path.join(APP_DIR, "assets", "MiSans-Regular.ttf")
+    if os.path.exists(font_path):
+        return pygame.font.Font(font_path, size)
+    return pygame.font.Font(None, size)
 
 class Button:
     def __init__(self, rect, text, action, kind="normal"):
@@ -86,8 +126,8 @@ class Button:
         self.action = action
         self.kind = kind
 
-    def draw(self, screen, font):
-        mouse = pygame.mouse.get_pos()
+    def draw(self, screen, font, mouse_pos=None):
+        mouse = mouse_pos if mouse_pos is not None else pygame.mouse.get_pos()
         hovered = self.rect.collidepoint(mouse)
         if self.kind == "danger":
             color = (156, 56, 61) if hovered else (126, 45, 51)
@@ -120,7 +160,12 @@ class MinesweeperGame:
             self.sfx_channel = None
 
         pygame.display.set_caption("Image Minesweeper MVP")
-        self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+        self.fullscreen = False
+        self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+        # 所有绘制都画到这块固定 980x720 的逻辑画布上，最终再缩放到 display_surface
+        self.screen = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT)).convert()
+        self.render_rect = pygame.Rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
+        self._compute_render_rect()
         self.clock = pygame.time.Clock()
         self.font = load_font(20)
         self.small_font = load_font(16)
@@ -162,6 +207,41 @@ class MinesweeperGame:
         self.load_settings()
         self.reset_board()
         self.build_buttons()
+
+    def _compute_render_rect(self):
+        """根据当前显示表面尺寸，计算逻辑画布缩放后居中放置的矩形（保持宽高比）。"""
+        sw, sh = self.display_surface.get_size()
+        if sw == WINDOW_WIDTH and sh == WINDOW_HEIGHT:
+            self.render_rect = pygame.Rect(0, 0, sw, sh)
+            return
+        scale = min(sw / WINDOW_WIDTH, sh / WINDOW_HEIGHT)
+        rw = max(1, int(WINDOW_WIDTH * scale))
+        rh = max(1, int(WINDOW_HEIGHT * scale))
+        rx = (sw - rw) // 2
+        ry = (sh - rh) // 2
+        self.render_rect = pygame.Rect(rx, ry, rw, rh)
+
+    def _to_logical(self, pos):
+        """把显示表面的鼠标坐标换算为逻辑画布坐标。"""
+        if self.render_rect.width == 0 or self.render_rect.height == 0:
+            return pos
+        x, y = pos
+        lx = (x - self.render_rect.x) * WINDOW_WIDTH / self.render_rect.width
+        ly = (y - self.render_rect.y) * WINDOW_HEIGHT / self.render_rect.height
+        return int(lx), int(ly)
+
+    def _logical_mouse_pos(self):
+        return self._to_logical(pygame.mouse.get_pos())
+
+    def toggle_fullscreen(self):
+        self.fullscreen = not self.fullscreen
+        if self.fullscreen:
+            self.display_surface = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+            self.message = "Fullscreen on (F11 / ESC to exit)"
+        else:
+            self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+            self.message = "Fullscreen off"
+        self._compute_render_rect()
 
     def ensure_storage(self):
         os.makedirs(SETTINGS_DIR, exist_ok=True)
@@ -248,9 +328,10 @@ class MinesweeperGame:
     def build_buttons(self):
         x = 638
         self.game_buttons = [
-            Button((x, 110, 282, 48), "Start / Restart", self.start_game, "ok"),
-            Button((x, 174, 282, 44), "Settings", self.open_settings),
-            Button((x, 234, 282, 44), "BGM Play / Pause", self.toggle_bgm),
+            Button((x, 110, 282, 44), "Start / Restart", self.start_game, "ok"),
+            Button((x, 160, 282, 40), "Settings", self.open_settings),
+            Button((x, 206, 282, 40), "BGM Play / Pause", self.toggle_bgm),
+            Button((x, 252, 282, 40), "Fullscreen (F11)", self.toggle_fullscreen),
         ]
 
         sx = 64
@@ -586,7 +667,7 @@ class MinesweeperGame:
         if not path:
             return None
         try:
-            return pygame.image.load(path).convert()
+            return pygame.image.load(path).convert_alpha()
         except Exception:
             if raise_errors:
                 raise
@@ -847,6 +928,14 @@ class MinesweeperGame:
             self.draw_settings()
         else:
             self.draw_game()
+
+        if (self.render_rect.size == (WINDOW_WIDTH, WINDOW_HEIGHT)
+                and self.render_rect.topleft == (0, 0)):
+            self.display_surface.blit(self.screen, (0, 0))
+        else:
+            self.display_surface.fill((0, 0, 0))
+            scaled = pygame.transform.smoothscale(self.screen, self.render_rect.size)
+            self.display_surface.blit(scaled, self.render_rect)
         pygame.display.flip()
 
     def draw_header(self):
@@ -863,8 +952,9 @@ class MinesweeperGame:
         pygame.draw.rect(self.screen, PANEL, panel_rect, border_radius=8)
         pygame.draw.rect(self.screen, (55, 65, 82), panel_rect, 1, border_radius=8)
 
+        mouse_pos = self._logical_mouse_pos()
         for button in self.game_buttons:
-            button.draw(self.screen, self.small_font)
+            button.draw(self.screen, self.small_font, mouse_pos)
 
         lines = [
             f"Configured mines: {self.mine_count}",
@@ -880,13 +970,13 @@ class MinesweeperGame:
             f"BGM: {self.short_path(self.bgm_audio_path)}",
             f"BGM state: {'playing' if self.bgm_playing else 'paused'}",
         ]
-        y = 260
+        y = 304
         for line in lines:
             self.draw_text(line, (638, y), self.small_font, MUTED)
-            y += 25
+            y += 22
 
-        self.draw_text(f"Settings file: {os.path.relpath(SETTINGS_PATH, APP_DIR)}", (638, 590), self.small_font, MUTED)
-        self.draw_text(f"Cache folder: {os.path.relpath(CACHE_DIR, APP_DIR)}", (638, 616), self.small_font, MUTED)
+        self.draw_text(f"Settings file: {os.path.relpath(SETTINGS_PATH, APP_DIR)}", (638, y + 6), self.small_font, MUTED)
+        self.draw_text(f"Cache folder: {os.path.relpath(CACHE_DIR, APP_DIR)}", (638, y + 28), self.small_font, MUTED)
 
     def draw_settings(self):
         self.draw_text("Settings", (210, 38), self.big_font)
@@ -917,8 +1007,9 @@ class MinesweeperGame:
             self.draw_text(label, (64, y), self.small_font, TEXT)
             self.draw_text(self.short_path(path), (250, y), self.small_font, MUTED)
 
+        mouse_pos = self._logical_mouse_pos()
         for button in self.settings_buttons:
-            button.draw(self.screen, self.small_font)
+            button.draw(self.screen, self.small_font, mouse_pos)
 
     def draw_board(self):
         pygame.draw.rect(self.screen, (11, 14, 20), self.board_rect.inflate(8, 8), border_radius=8)
@@ -990,6 +1081,17 @@ class MinesweeperGame:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_F11:
+                self.toggle_fullscreen()
+                return
+            if event.key == pygame.K_ESCAPE and self.fullscreen:
+                self.toggle_fullscreen()
+                return
+        if hasattr(event, "pos"):
+            data = dict(event.dict)
+            data["pos"] = self._to_logical(event.pos)
+            event = pygame.event.Event(event.type, data)
         for button in self.current_buttons():
             if button.handle(event):
                 return
