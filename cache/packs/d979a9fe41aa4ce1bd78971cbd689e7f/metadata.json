@@ -1,0 +1,33 @@
+{
+  "format": "image-minesweeper-pack",
+  "version": 1,
+  "settings": {
+    "mine_count": 40,
+    "cover_opacity": 180,
+    "reveal_opacity": 255,
+    "mine_style_index": 2,
+    "cover_image_path": null,
+    "reveal_image_path": null,
+    "win_audio_path": null,
+    "safe_audio_path": null,
+    "mine_audio_path": null,
+    "bgm_audio_path": null
+  },
+  "resources": {
+    "cover_image_path": {
+      "type": "file",
+      "path": "assets/cover_image_path/ryoko-cyx.jpg"
+    },
+    "reveal_image_path": {
+      "type": "file",
+      "path": "assets/reveal_image_path/school-swimsuit-nkx.jpg"
+    },
+    "win_audio_path": null,
+    "safe_audio_path": null,
+    "mine_audio_path": null,
+    "bgm_audio_path": {
+      "type": "file",
+      "path": "assets/bgm_audio_path/活字印刷.wav"
+    }
+  }
+}
