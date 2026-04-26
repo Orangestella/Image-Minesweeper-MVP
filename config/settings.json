@@ -1,12 +1,12 @@
 {
   "mine_count": 40,
-  "cover_opacity": 180,
+  "cover_opacity": 255,
   "reveal_opacity": 255,
-  "mine_style_index": 2,
-  "cover_image_path": "c:\\Users\\15813\\Documents\\New project\\cache\\packs\\d979a9fe41aa4ce1bd78971cbd689e7f\\assets\\cover_image_path\\ryoko-cyx.jpg",
-  "reveal_image_path": "c:\\Users\\15813\\Documents\\New project\\cache\\packs\\d979a9fe41aa4ce1bd78971cbd689e7f\\assets\\reveal_image_path\\school-swimsuit-nkx.jpg",
+  "mine_style_index": 0,
+  "cover_image_path": null,
+  "reveal_image_path": null,
   "win_audio_path": null,
   "safe_audio_path": null,
   "mine_audio_path": null,
-  "bgm_audio_path": "c:\\Users\\15813\\Documents\\New project\\cache\\packs\\d979a9fe41aa4ce1bd78971cbd689e7f\\assets\\bgm_audio_path\\活字印刷.wav"
+  "bgm_audio_path": null
 }
