@@ -4,3 +4,8 @@ cache/*
 dist
 build
 main.spec
+ImageMinesweeperLive2D-2.0-renpy-dists
+renpy_minesweeper/game/saves/*
+renpy_minesweeper/errors.txt
+renpy_minesweeper/traceback.txt
+renpy_minesweeper/log.txt

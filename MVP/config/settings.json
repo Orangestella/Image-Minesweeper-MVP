@@ -1,0 +1,12 @@
+{
+  "mine_count": 10,
+  "cover_opacity": 155,
+  "reveal_opacity": 255,
+  "mine_style_index": 2,
+  "cover_image_path": null,
+  "reveal_image_path": null,
+  "win_audio_path": null,
+  "safe_audio_path": null,
+  "mine_audio_path": null,
+  "bgm_audio_path": null
+}

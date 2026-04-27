@@ -1,0 +1,43 @@
+{
+  "mine_count": 1,
+  "cover_opacity": 255,
+  "reveal_opacity": 255,
+  "mine_style": "X",
+  "cover_image_path": null,
+  "reveal_image_path": null,
+  "win_audio_path": null,
+  "safe_audio_path": null,
+  "mine_audio_path": null,
+  "bgm_audio_path": null,
+  "play_model_path": null,
+  "win_model_path": null,
+  "play_model_status": {
+    "kind": "moc3",
+    "status": "moc3 resource valid; requires Ren'Py Live2D SDK and GL2",
+    "detail": "Found chiguo_A.model3.json; motions: act_01066_f20105, act_07_f20706, body_00, body_01",
+    "motions": [
+      "act_01066_f20105",
+      "act_07_f20706",
+      "body_00",
+      "body_01"
+    ]
+  },
+  "win_model_status": {
+    "kind": "moc3",
+    "status": "moc3 resource valid; requires Ren'Py Live2D SDK and GL2",
+    "detail": "Found chiguo_B.model3.json; motions: act_ev02_act01011_f40101, act_ev02_act04_f10201, body_00, body_01, body_02",
+    "motions": [
+      "act_ev02_act01011_f40101",
+      "act_ev02_act04_f10201",
+      "body_00",
+      "body_01",
+      "body_02"
+    ]
+  },
+  "dialogues": [
+    {
+      "text": "Niec try",
+      "audio_path": null
+    }
+  ]
+}

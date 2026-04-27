@@ -3,6 +3,12 @@
 Pygame minesweeper with configurable mine count, two board images, three event sounds, adjustable image opacity, selectable mine styles, and persistent settings.
 The board aspect ratio follows the covered image when available, otherwise the revealed image, while still using a 16x16 grid.
 
+## Ren'Py Formal Version
+
+The formal Ren'Py rewrite lives in `renpy_minesweeper/`.
+
+Run `python renpy_minesweeper/resource_loader.py` first to copy resources into the Ren'Py project, then open that folder from the Ren'Py launcher. The Live2D version keeps the minesweeper rules and resource pack workflow, and adds gameplay/win Live2D model slots plus clickable random dialogue lines with paired audio.
+
 ## Run
 
 ```powershell
@@ -21,6 +27,7 @@ python main.py
 - Audio rows also support `Use dir` and `Copy dir`; when an audio setting points to a directory, each trigger randomly plays one `.wav`, `.ogg`, or `.mp3` file from that directory
 - `Export pack`: copy the current settings and all referenced resources into a temporary package, write `metadata.json`, and save a `.tar`
 - `Import pack`: extract a previously exported `.tar` into `cache/packs/` and switch the settings to the imported resources
+- `Clear cache`: delete cached resources/imported packs and clear any settings that pointed into `cache/`
 
 Settings are saved automatically after every change. If an image or audio file is missing later, the game falls back to colored cells or silence.
 
